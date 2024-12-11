@@ -44,13 +44,20 @@ coverage/
 
 '''
 SERVER_JS_CONTENT = '''const express = require("express");
+const cors = require("cors");
+
 const app = express();
 const port = process.env.PORT || 5000;
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("Hello, MERN!");
+});
+
+app.get("/api", (req, res) => {
+    res.json({ message: "API is working" });
 });
 
 app.listen(port, () => {
@@ -224,7 +231,9 @@ def create_mern_project(root_dir=os.getcwd(), backend_dir="backend", frontend_di
         _run_batch_commands(express_command)
         nodemon_command = ["npm install nodemon --save-dev"]
         _run_batch_commands(nodemon_command)
-        print("📦 Installed Express & Nodemon in backend")
+        cors_command = ["npm install cors"]
+        _run_batch_commands(cors_command)
+        print("📦 Installed Express, Nodemon & Cors in backend")
 
         # Update package.json with new scripts
         _update_package_json()
@@ -241,11 +250,14 @@ def create_mern_project(root_dir=os.getcwd(), backend_dir="backend", frontend_di
         ]
         _run_batch_commands(create_react_app_commands)
 
-        # Install axios
+        # Install axios & webvitals
         os.chdir(frontend_dir)
         axios_command = ["npm install axios"]
         _run_batch_commands(axios_command)
         print("📦 Installed axios in frontend")
+        webvit_command = ["npm i web-vitals --save-dev"]
+        _run_batch_commands(webvit_command)
+        print("📦 Installed web-vitals in frontend")
 
         # Create a .env file in frontend for REACT_APP_API_URL (backend URL)
         if os.path.exists(".env"):
@@ -259,6 +271,32 @@ def create_mern_project(root_dir=os.getcwd(), backend_dir="backend", frontend_di
             with open(".env", "w") as env_file:
                 env_file.write("REACT_APP_API_URL=http://localhost:5000")
             print("✅ Created .env")
+
+        # Open App.js, replace default content with axios get request to backend
+        with open("src/App.js", "w") as app_js:
+            app_js.write('''import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function App() {
+    const [message, setMessage] = useState('');
+    
+    useEffect(() => {
+        axios.get(`${process.env.REACT_APP_API_URL}/api`)
+            .then(res => setMessage(res.data.message))
+            .catch(err => console.error(err));
+    }, []);
+    
+    return (
+        <div>
+            <h1>MERNcraft Header</h1>
+            <p>{message}</p>
+        </div>
+    );
+}
+
+export default App;
+''')
+        print("✅ Updated App.js with axios get request")
 
         # Change back to project root directory
         os.chdir("..")
